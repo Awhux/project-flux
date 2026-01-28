@@ -1,0 +1,7 @@
+# This directory stores local production data
+# Subdirectories are created automatically by Docker Compose:
+# - postgres/  - PostgreSQL database files
+# - redis/     - Redis persistence files  
+# - minio/     - MinIO object storage files
+# - vault/     - Vault encrypted data
+

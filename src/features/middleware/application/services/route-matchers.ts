@@ -18,6 +18,7 @@ export const publicRouteMatcher = createRouteMatcher([
 export const guestRouteMatcher = createRouteMatcher([
   '/auth/sign-up{/*path}',
   '/auth/sign-in{/*path}',
+  '/api/auth{/*path}',
 ])
 
 /**
@@ -39,5 +40,6 @@ export const authenticatedRouteMatcher = createRouteMatcher([
 export const apiRouteMatcher = createRouteMatcher([
   '/api{/*path}',
   '/trpc{/*path}',
+  '!/api/auth{/*path}',
 ])
 

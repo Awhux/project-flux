@@ -80,7 +80,6 @@ export function createAuthConfig(
       debugLogs: false,
       transaction: false,
     }),
-    basePath: 'auth',
     emailAndPassword: {
       enabled: enableEmailAndPassword,
       disableSignUp: config.emailAndPassword?.disableSignUp ?? false,
@@ -118,19 +117,19 @@ export function createAuthConfig(
       },
     },
     plugins: [
-      lastLoginMethod({
-        storeInDatabase: true,
-        cookieName: `${AUTH_COOKIE_PREFIX}.${AUTH_COOKIE_LAST_LOGIN_METHOD_NAME}`,
-      }),
+      // lastLoginMethod({
+      //   storeInDatabase: true,
+      //   cookieName: `${AUTH_COOKIE_PREFIX}.${AUTH_COOKIE_LAST_LOGIN_METHOD_NAME}`,
+      // }),
       admin(),
       twoFactor(),
-      organization({
-        ac: accessControl,
-        roles: { owner },
-        teams: {
-          enabled: true,
-        },
-      }),
+      // organization({
+      //   ac: accessControl,
+      //   roles: { owner },
+      //   teams: {
+      //     enabled: true,
+      //   },
+      // }),
     ],
     advanced: advancedConfig,
   } satisfies BetterAuthOptions

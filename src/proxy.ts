@@ -45,10 +45,6 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (guestRouteMatcher(request)) {
-    return NextResponse.next()
-  }
-
   const redirectResponse = handleAuthRedirect(request, hasCookie, {
     returnUrl: fullPath,
   })

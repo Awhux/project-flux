@@ -36,7 +36,7 @@ export function createAuthClient(options: CreateAuthClientOptions = {}) {
 
   const {
     baseURL = env.baseUrl,
-    basePath = 'auth',
+    basePath = 'api/auth',
     includeOrganization = true,
     fetchOptions,
     sessionOptions,

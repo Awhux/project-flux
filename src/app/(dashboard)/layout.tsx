@@ -1,52 +1,21 @@
 "use client"
 
-import * as React from "react"
-import { SidebarNav } from "@/components/dashboard/layout/sidebar-nav"
-import { Header } from "@/components/dashboard/layout/header"
-import { MobileNav } from "@/components/dashboard/layout/mobile-nav"
-import { usePathname } from "next/navigation"
-
-// Page title mapping
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/dashboard/links": "Links",
-  "/dashboard/analytics": "Analytics",
-  "/dashboard/leads": "Leads",
-  "/dashboard/settings": "Settings",
-}
+import { NavigationBar } from "@/features/navigation"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const pathname = usePathname()
-  const title = pageTitles[pathname] || "Dashboard"
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <SidebarNav />
-      </div>
-
-      {/* Mobile Navigation */}
-      <MobileNav
-        isOpen={mobileMenuOpen}
-        onClose={() => setMobileMenuOpen(false)}
-      />
+      {/* Navigation Bar */}
+      <NavigationBar />
 
       {/* Main Content */}
-      <div className="lg:pl-64">
-        <Header
-          title={title}
-          onMenuClick={() => setMobileMenuOpen(true)}
-        />
-        <main className="min-h-[calc(100vh-4rem)] bg-muted/30 p-4 lg:p-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
-      </div>
+      <main className="min-h-[calc(100vh-3.5rem)] bg-muted/30 p-4 md:p-6">
+        <div className="mx-auto max-w-308">{children}</div>
+      </main>
     </div>
   )
 }

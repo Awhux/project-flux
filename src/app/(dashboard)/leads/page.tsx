@@ -1,64 +1,60 @@
+"use client"
+
 import * as React from "react"
-import { LeadsTable } from "@/components/dashboard/leads/leads-table"
+import {
+  LeadsHeader,
+  LeadsTable,
+  useLeads,
+  exportLeadsToCSV,
+} from "@/features/leads"
+import { toast } from "sonner"
 
-// Mock data
-const mockLeads = [
-  {
-    id: "1",
-    name: "João Silva",
-    email: "joao@email.com",
-    phone: "+55 (11) 98765-4321",
-    link: "promo-summer",
-    capturedAt: "Jan 24, 2026",
-    capturedTime: "14:32",
-  },
-  {
-    id: "2",
-    name: "Maria Santos",
-    email: "maria@email.com",
-    phone: "+55 (11) 99876-5432",
-    link: "black-friday",
-    capturedAt: "Jan 23, 2026",
-    capturedTime: "10:15",
-  },
-  {
-    id: "3",
-    name: "Pedro Oliveira",
-    phone: "+55 (21) 98765-1234",
-    link: "promo-summer",
-    capturedAt: "Jan 22, 2026",
-    capturedTime: "16:45",
-  },
-  {
-    id: "4",
-    name: "Ana Costa",
-    email: "ana@email.com",
-    phone: "+55 (21) 99876-4321",
-    link: "new-product",
-    capturedAt: "Jan 21, 2026",
-    capturedTime: "09:20",
-  },
-  {
-    id: "5",
-    name: "Carlos Pereira",
-    phone: "+55 (11) 97654-3210",
-    link: "black-friday",
-    capturedAt: "Jan 20, 2026",
-    capturedTime: "18:30",
-  },
-]
-
+/**
+ * Página de leads capturados
+ * Exibe leads do Modo Ghost com filtros e exportação
+ */
 export default function LeadsPage() {
-  return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Leads</h2>
-        <p className="text-muted-foreground mt-2">
-          Manage leads captured through Ghost Mode
-        </p>
-      </div>
+  const {
+    leads,
+    displayLeads,
+    isLoading,
+    linkFilter,
+    setLinkFilter,
+    dateFilter,
+    setDateFilter,
+  } = useLeads()
 
-      <LeadsTable leads={mockLeads} />
+  const handleExport = () => {
+    if (leads.length === 0) {
+      toast.info("Nenhum lead para exportar")
+      return
+    }
+    exportLeadsToCSV(leads)
+    toast.success("Leads exportados com sucesso")
+  }
+
+  const handleViewDetails = (id: string) => {
+    toast.info("Detalhes do lead em breve")
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Cabeçalho com filtros */}
+      <LeadsHeader
+        linkFilter={linkFilter}
+        onLinkFilterChange={setLinkFilter}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+        onExport={handleExport}
+        totalLeads={leads.length}
+      />
+
+      {/* Tabela de leads */}
+      <LeadsTable
+        leads={displayLeads}
+        isLoading={isLoading}
+        onViewDetails={handleViewDetails}
+      />
     </div>
   )
 }

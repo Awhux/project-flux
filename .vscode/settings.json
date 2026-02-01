@@ -8,7 +8,5 @@
     "cva",
     "cx"
   ],
-  "editor.defaultFormatter": "Prisma.prisma",
-  "prisma.pinToPrisma6": false,
   "typescript.tsdk": "node_modules\\typescript\\lib"
 }

@@ -1,0 +1,423 @@
+// =============================================================================
+// ZapLink Tracker - Core Application Schema
+// =============================================================================
+// This file contains the business models for link management, analytics,
+// lead capture, and subscription billing. Authentication models are in auth.prisma.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum PlanTier {
+  FREE
+  PRO
+  AGENCY
+
+  @@map("plan_tiers")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  TRIALING
+
+  @@map("subscription_statuses")
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+
+  @@map("billing_cycles")
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+
+  @@map("payment_statuses")
+}
+
+enum PaymentMethod {
+  PIX
+  CREDIT_CARD
+  BOLETO
+
+  @@map("payment_methods")
+}
+
+enum DeviceType {
+  MOBILE
+  DESKTOP
+  TABLET
+  OTHER
+
+  @@map("device_types")
+}
+
+enum SocialProvider {
+  GOOGLE
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+  NONE
+
+  @@map("social_providers")
+}
+
+enum WebhookProvider {
+  MERCADO_PAGO
+  META
+  TIKTOK
+
+  @@map("webhook_providers")
+}
+
+// -----------------------------------------------------------------------------
+// MODELS
+// -----------------------------------------------------------------------------
+
+/// Link - The core entity storing shortened links with WhatsApp redirects
+/// Primary lookup is by slug for redirect engine performance
+model Link {
+  id String @id @db.VarChar(255)
+
+  userId String @map("user_id") @db.VarChar(255)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Link identification
+  slug String @unique @db.VarChar(50)
+
+  // WhatsApp destination
+  destinationNumber String @map("destination_number") @db.VarChar(20)
+  messageTemplate   String @map("message_template") @db.Text
+
+  // Facebook tracking (encrypted at app level)
+  pixelId   String? @map("pixel_id") @db.VarChar(50)
+  capiToken String? @map("capi_token") @db.Text
+
+  // Link configuration
+  ghostMode Boolean @default(false) @map("ghost_mode")
+  isActive  Boolean @default(true) @map("is_active")
+
+  // UTM default values
+  defaultUtmSource   String? @map("default_utm_source") @db.VarChar(255)
+  defaultUtmMedium   String? @map("default_utm_medium") @db.VarChar(255)
+  defaultUtmCampaign String? @map("default_utm_campaign") @db.VarChar(255)
+  defaultUtmContent  String? @map("default_utm_content") @db.VarChar(255)
+
+  // =========================================================================
+  // Interstitial Page Customization (Ghost Mode)
+  // =========================================================================
+
+  // Visual customization
+  interstitialLogo        String? @map("interstitial_logo") @db.Text
+  interstitialHeadline    String? @map("interstitial_headline") @db.VarChar(255)
+  interstitialDescription String? @map("interstitial_description") @db.Text
+  interstitialButtonText  String? @map("interstitial_button_text") @db.VarChar(100)
+  interstitialBgColor     String? @map("interstitial_bg_color") @db.VarChar(20)
+  interstitialBgImage     String? @map("interstitial_bg_image") @db.Text
+  interstitialBgOverlay   Int?    @map("interstitial_bg_overlay") @db.SmallInt
+  interstitialTheme       String? @map("interstitial_theme") @db.VarChar(10)
+
+  // Form field toggles
+  collectName   Boolean @default(false) @map("collect_name")
+  nameRequired  Boolean @default(false) @map("name_required")
+  collectEmail  Boolean @default(false) @map("collect_email")
+  emailRequired Boolean @default(false) @map("email_required")
+  phoneLabel    String? @map("phone_label") @db.VarChar(50)
+  privacyUrl    String? @map("privacy_url") @db.Text
+  privacyText   String? @map("privacy_text") @db.VarChar(255)
+
+  // Advanced features
+  customCss            String? @map("custom_css") @db.Text
+  countdownEnabled     Boolean @default(false) @map("countdown_enabled")
+  countdownSeconds     Int?    @map("countdown_seconds") @db.SmallInt
+  countdownRedirectUrl String? @map("countdown_redirect_url") @db.Text
+  socialProofEnabled   Boolean @default(false) @map("social_proof_enabled")
+  socialProofCount     Int?    @map("social_proof_count")
+  socialProofText      String? @map("social_proof_text") @db.VarChar(100)
+  exitIntentEnabled    Boolean @default(false) @map("exit_intent_enabled")
+  exitIntentMessage    String? @map("exit_intent_message") @db.VarChar(255)
+  exitIntentOffer      String? @map("exit_intent_offer") @db.VarChar(255)
+
+  // Trust elements (stored as JSON arrays)
+  securityBadges String[] @map("security_badges") @db.VarChar(50)
+  testimonials   Json?    @map("testimonials") @db.JsonB
+
+  // Counter cache for performance (avoid COUNT queries)
+  clickCount Int @default(0) @map("click_count")
+  leadCount  Int @default(0) @map("lead_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  clicks Click[]
+  leads  Lead[]
+
+  // Indexes for performance
+  @@index([userId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([slug])
+  @@map("links")
+}
+
+/// Click - High-volume analytics table for tracking every click event
+/// Optimized for write-heavy workload with strategic indexes
+model Click {
+  id String @id @db.VarChar(255)
+
+  linkId String @map("link_id") @db.VarChar(255)
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  // Denormalized userId for easier user-level analytics queries
+  userId String @map("user_id") @db.VarChar(255)
+
+  // Timestamp for time-series queries
+  timestamp DateTime @default(now())
+
+  // Request data
+  ipAddress String? @map("ip_address") @db.VarChar(45)
+  userAgent String? @map("user_agent") @db.Text
+  referrer  String? @db.Text
+
+  // Device detection (computed from userAgent at write time)
+  device DeviceType @default(OTHER)
+
+  // UTM parameters for attribution
+  utmSource   String? @map("utm_source") @db.VarChar(255)
+  utmMedium   String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(255)
+  utmContent  String? @map("utm_content") @db.VarChar(255)
+  utmTerm     String? @map("utm_term") @db.VarChar(255)
+
+  // Geo data (from IP lookup, optional)
+  country String? @db.VarChar(100)
+  city    String? @db.VarChar(100)
+
+  // Facebook tracking IDs for CAPI
+  fbp String? @db.VarChar(255)
+  fbc String? @db.VarChar(255)
+
+  // Indexes for performance
+  @@index([linkId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([linkId, timestamp])
+  @@index([utmSource])
+  @@index([device])
+  @@map("clicks")
+}
+
+/// Lead - Captures from Ghost Mode interstitial before WhatsApp redirect
+model Lead {
+  id String @id @db.VarChar(255)
+
+  linkId String @map("link_id") @db.VarChar(255)
+  link   Link   @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  // Denormalized userId for easier user-level queries
+  userId String @map("user_id") @db.VarChar(255)
+
+  // Contact information
+  phone String  @db.VarChar(20)
+  name  String? @db.VarChar(120)
+  email String? @db.VarChar(255)
+
+  // Social auth data (if captured via OAuth)
+  socialProvider SocialProvider @default(NONE) @map("social_provider")
+  socialId       String?        @map("social_id") @db.VarChar(255)
+  socialAvatar   String?        @map("social_avatar") @db.Text
+
+  // Flexible metadata for additional data
+  metadata Json? @db.JsonB
+
+  // UTM context at capture time
+  utmSource   String? @map("utm_source") @db.VarChar(255)
+  utmMedium   String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(255)
+  utmContent  String? @map("utm_content") @db.VarChar(255)
+
+  convertedAt DateTime @default(now()) @map("converted_at")
+
+  // Indexes for performance
+  @@index([linkId])
+  @@index([userId])
+  @@index([phone])
+  @@index([convertedAt])
+  @@map("leads")
+}
+
+/// Subscription - Manages user plan tiers and billing cycles
+model Subscription {
+  id String @id @db.VarChar(255)
+
+  userId String @unique @map("user_id") @db.VarChar(255)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Plan details
+  plan   PlanTier           @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  // Billing cycle
+  billingCycle       BillingCycle @default(MONTHLY) @map("billing_cycle")
+  currentPeriodStart DateTime     @map("current_period_start")
+  currentPeriodEnd   DateTime     @map("current_period_end")
+
+  // Pricing (stored in cents or smallest unit)
+  priceAmount Int    @default(0) @map("price_amount")
+  currency    String @default("BRL") @db.VarChar(3)
+
+  // Cancellation handling
+  cancelAt     DateTime? @map("cancel_at")
+  cancelledAt  DateTime? @map("cancelled_at")
+  cancelReason String?   @map("cancel_reason") @db.Text
+
+  // Trial period
+  trialEndsAt DateTime? @map("trial_ends_at")
+
+  // External reference (Mercado Pago subscription ID if any)
+  externalId String? @map("external_id") @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  payments Payment[]
+
+  // Indexes for performance
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@index([plan])
+  @@map("subscriptions")
+}
+
+/// Payment - Tracks all payment transactions (Mercado Pago Pix)
+model Payment {
+  id String @id @db.VarChar(255)
+
+  subscriptionId String?       @map("subscription_id") @db.VarChar(255)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  // Denormalized for easier user queries
+  userId String @map("user_id") @db.VarChar(255)
+
+  // Payment details
+  amount   Int           @default(0)
+  currency String        @default("BRL") @db.VarChar(3)
+  status   PaymentStatus @default(PENDING)
+  method   PaymentMethod @default(PIX)
+
+  // External reference (Mercado Pago payment ID)
+  externalId String? @unique @map("external_id") @db.VarChar(255)
+
+  // Pix-specific fields (nullable after payment completion)
+  pixQrCode       String?   @map("pix_qr_code") @db.Text
+  pixQrCodeBase64 String?   @map("pix_qr_code_base64") @db.Text
+  pixExpiresAt    DateTime? @map("pix_expires_at")
+
+  // Invoice
+  invoiceUrl String? @map("invoice_url") @db.Text
+
+  // Flexible metadata for webhook data
+  metadata Json? @db.JsonB
+
+  // Timestamps
+  paidAt    DateTime? @map("paid_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // Indexes for performance
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+/// UserSettings - User preferences and default configurations
+model UserSettings {
+  userId String @id @map("user_id") @db.VarChar(255)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Default Facebook tracking (encrypted at app level)
+  defaultPixelId   String? @map("default_pixel_id") @db.VarChar(50)
+  defaultCapiToken String? @map("default_capi_token") @db.Text
+
+  // Default WhatsApp settings
+  defaultMessageTemplate String? @map("default_message_template") @db.Text
+  whatsappNumber         String? @map("whatsapp_number") @db.VarChar(20)
+
+  // Notification preferences
+  notificationsEmail Boolean @default(true) @map("notifications_email")
+  notificationsSms   Boolean @default(false) @map("notifications_sms")
+  notificationsPush  Boolean @default(true) @map("notifications_push")
+
+  // Regional settings
+  language String @default("pt-BR") @db.VarChar(10)
+  timezone String @default("America/Sao_Paulo") @db.VarChar(50)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}
+
+/// UsageLimit - Tracks monthly usage per user for plan enforcement
+model UsageLimit {
+  userId String @id @map("user_id") @db.VarChar(255)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Current billing period
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  // Usage counters (reset monthly)
+  clicksUsed     Int @default(0) @map("clicks_used")
+  linksCreated   Int @default(0) @map("links_created")
+  leadsCollected Int @default(0) @map("leads_collected")
+
+  // Plan limits (denormalized for quick checks)
+  clicksLimit Int @default(100) @map("clicks_limit")
+  linksLimit  Int @default(1) @map("links_limit")
+
+  lastResetAt DateTime @default(now()) @map("last_reset_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Indexes for performance
+  @@index([periodEnd])
+  @@map("usage_limits")
+}
+
+/// Webhook - Audit log for incoming webhooks (Mercado Pago, Meta, etc.)
+model Webhook {
+  id String @id @db.VarChar(255)
+
+  // Webhook source
+  provider WebhookProvider
+  event    String          @db.VarChar(100)
+
+  // Full webhook payload
+  payload   Json    @db.JsonB
+  signature String? @db.Text
+
+  // Processing status
+  processed   Boolean   @default(false)
+  processedAt DateTime? @map("processed_at")
+  error       String?   @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Indexes for performance
+  @@index([provider])
+  @@index([processed])
+  @@index([createdAt])
+  @@map("webhooks")
+}

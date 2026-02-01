@@ -19,16 +19,17 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  onboarding     UserOnboarding[]
-  sessions       Session[]
-  accounts       Account[]
-  apikeys        Apikey[]
-  twofactors     TwoFactor[]
-  // members        Member[]
-  // invitations    Invitation[]
-  // teamMembers    TeamMember[]
-  // encryptionKeys EncryptionKey[]
+  // Relations - Auth
+  sessions   Session[]
+  accounts   Account[]
+  apikeys    Apikey[]
+  twofactors TwoFactor[]
+
+  // Relations - App (defined in app.prisma)
+  links        Link[]
+  subscription Subscription?
+  settings     UserSettings?
+  usageLimit   UsageLimit?
 
   // Indexes for performance
   @@index([email])
@@ -36,32 +37,6 @@ model User {
   @@index([banned])
   @@index([createdAt])
   @@map("users")
-}
-
-enum OnboardingStep {
-  NOT_STARTED
-  ACCOUNTS_LINKED
-  INCOME_SET
-  BUDGET_CREATED
-  COMPLETED
-
-  @@map("onboarding_steps")
-}
-
-model UserOnboarding {
-  userId String @id @map("user_id") @db.VarChar(255)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  currentStep OnboardingStep @default(NOT_STARTED) @map("current_step")
-
-  // Store monthly net income for reference
-  monthlyNetIncome Decimal? @map("monthly_net_income") @db.Money
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([currentStep])
-  @@map("user_onboardings")
 }
 
 model Session {

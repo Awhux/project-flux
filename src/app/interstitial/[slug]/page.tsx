@@ -1,40 +1,81 @@
-"use client"
+/**
+ * Interstitial Page
+ * 
+ * Server component that fetches link configuration and renders
+ * the interstitial page for lead capture.
+ * 
+ * Route: /interstitial/:slug
+ */
 
-import * as React from "react"
-import { useParams } from "next/navigation"
-import { LeadCaptureForm } from "@/components/dashboard/interstitial/lead-capture-form"
+import { notFound } from "next/navigation"
+import { prisma } from "@/features/database/server"
+import { extractInterstitialConfig } from "@/features/links/services/link-mapper.service"
+import { InterstitialClient } from "./interstitial-client"
 
-export default function InterstitialPage() {
-  const params = useParams()
-  const slug = params.slug as string
+interface InterstitialPageParams {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
 
-  const handleSubmit = async (data: { name?: string; phone: string; email?: string }) => {
-    console.log("Capturing lead:", { ...data, slug })
+export default async function InterstitialPage({ params, searchParams }: InterstitialPageParams) {
+  const { slug } = await params
+  const search = await searchParams
 
-    // TODO: Save lead to database
-    // TODO: Fire Facebook Pixel event
+  // Fetch link from database
+  const link = await prisma.link.findUnique({
+    where: { slug },
+  })
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+  // Return 404 if not found or inactive
+  if (!link || !link.isActive) {
+    notFound()
+  }
 
-    // TODO: Redirect to WhatsApp with pre-filled message
-    // For now, just redirect to WhatsApp
-    const whatsappUrl = `https://wa.me/5511987654321?text=Olá!%20Vim%20através%20do%20link%20${slug}`
-    window.location.href = whatsappUrl
+  // Extract interstitial config from link
+  const config = extractInterstitialConfig(link)
+
+  // Extract UTM params from URL
+  const utmParams = {
+    source: typeof search.utm_source === "string" ? search.utm_source : undefined,
+    medium: typeof search.utm_medium === "string" ? search.utm_medium : undefined,
+    campaign: typeof search.utm_campaign === "string" ? search.utm_campaign : undefined,
+    content: typeof search.utm_content === "string" ? search.utm_content : undefined,
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-gray-50">
-      {/* Content */}
-      <div className="relative z-10">
-        <LeadCaptureForm
-          onSubmit={handleSubmit}
-          linkSlug={slug}
-          headline="Garanta seu desconto exclusivo"
-          subheadline="Confirme seu WhatsApp para continuar"
-          socialProofCount={1247}
-        />
-      </div>
-    </div>
+    <InterstitialClient
+      linkId={link.id}
+      slug={slug}
+      config={config}
+      destinationNumber={link.destinationNumber}
+      messageTemplate={link.messageTemplate}
+      utmParams={utmParams}
+      defaultUtm={{
+        source: link.defaultUtmSource || undefined,
+        medium: link.defaultUtmMedium || undefined,
+        campaign: link.defaultUtmCampaign || undefined,
+        content: link.defaultUtmContent || undefined,
+      }}
+    />
   )
+}
+
+/**
+ * Generate metadata for the interstitial page
+ */
+export async function generateMetadata({ params }: InterstitialPageParams) {
+  const { slug } = await params
+
+  const link = await prisma.link.findUnique({
+    where: { slug },
+    select: {
+      interstitialHeadline: true,
+      interstitialDescription: true,
+    },
+  })
+
+  return {
+    title: link?.interstitialHeadline || "Continue para WhatsApp",
+    description: link?.interstitialDescription || "Confirme suas informações para continuar",
+  }
 }

@@ -6,7 +6,6 @@ export interface AnalyticsMetrics {
   totalClicks: number
   totalLeads: number
   conversionRate: number
-  avgClickTime: string
 }
 
 export interface AnalyticsTrends {

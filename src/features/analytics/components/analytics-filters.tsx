@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { dateRangeOptions, linkFilterOptions } from "../config/analytics.config"
+import { dateRangeOptions } from "../config/analytics.config"
+import { useUserLinksQuery } from "../hooks"
 import type { DateRange } from "../types"
 
 export interface AnalyticsFiltersProps {
@@ -33,15 +34,33 @@ export function AnalyticsFilters({
   selectedLink,
   onLinkChange,
 }: AnalyticsFiltersProps) {
+  const { data: links, isLoading: isLoadingLinks } = useUserLinksQuery()
+
+  // Build link filter options from real data
+  const linkFilterOptions = React.useMemo(() => {
+    const options = [{ value: "all", label: "Todos os Links" }]
+
+    if (links) {
+      links.forEach((link) => {
+        options.push({
+          value: link.id,
+          label: link.slug,
+        })
+      })
+    }
+
+    return options
+  }, [links])
+
   return (
     <>
       <Select
         value={selectedLink}
         onValueChange={onLinkChange}
-        items={linkFilterOptions}
+        disabled={isLoadingLinks}
       >
         <SelectTrigger className="w-[160px] sm:w-[180px]">
-          <SelectValue placeholder="Selecionar link" />
+          <SelectValue placeholder={isLoadingLinks ? "Carregando..." : "Selecionar link"} />
         </SelectTrigger>
         <SelectContent>
           {linkFilterOptions.map((option) => (
@@ -55,7 +74,6 @@ export function AnalyticsFilters({
       <Select
         value={dateRange}
         onValueChange={onDateRangeChange}
-        items={dateRangeOptions}
       >
         <SelectTrigger className="w-[120px] sm:w-[140px]">
           <SelectValue />

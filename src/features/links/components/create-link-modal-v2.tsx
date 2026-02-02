@@ -154,6 +154,13 @@ export function CreateLinkModalV2({
           pixelId: formState.pixelId || undefined,
           capiToken: formState.capiToken || undefined,
           ghostMode: formState.ghostMode,
+          // UTM parameters
+          utmSource: formState.utmSource || undefined,
+          utmMedium: formState.utmMedium || undefined,
+          utmCampaign: formState.utmCampaign || undefined,
+          utmContent: formState.utmContent || undefined,
+          // Interstitial config (only when Ghost Mode is enabled)
+          interstitial: formState.ghostMode ? formState.interstitial : undefined,
         })
         onOpenChange(false)
       } catch (error) {

@@ -22,7 +22,15 @@ export type {
 } from "./components"
 
 // Hooks
-export { useAnalyticsData, useDateRange } from "./hooks"
+export {
+  useAnalyticsQuery,
+  analyticsQueryKeys,
+  useUserLinksQuery,
+  userLinksQueryKeys,
+  useDateRange,
+} from "./hooks"
+
+export type { AnalyticsData, UseAnalyticsQueryOptions, LinkOption } from "./hooks"
 
 // Utils
 export {
@@ -38,6 +46,8 @@ export {
   clicksDataToCsv,
   utmDataToCsv,
   deviceDataToCsv,
+  referrerDataToCsv,
+  heatmapDataToCsv,
   exportAnalyticsToCsv,
 } from "./utils"
 
@@ -56,20 +66,8 @@ export type {
   LinkInfo,
 } from "./types"
 
-// Config
+// Config (only UI configuration options, no mock data)
 export {
-  mockMetrics,
-  mockTrends,
-  mockClicksData,
-  mockUtmSource,
-  mockUtmMedium,
-  mockUtmCampaign,
-  mockDeviceData,
-  mockReferrerData,
-  mockHeatmapData,
-  mockLinkComparisonData,
-  mockComparisonLinks,
   dateRangeOptions,
-  linkFilterOptions,
   utmTabOptions,
 } from "./config/analytics.config"

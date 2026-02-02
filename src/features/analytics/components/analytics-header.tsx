@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { DownloadIcon } from "lucide-react"
+import { DownloadIcon, RefreshCwIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/features/shared"
 import { AnalyticsFilters } from "./analytics-filters"
@@ -20,6 +20,10 @@ export interface AnalyticsHeaderProps {
   onExport: () => void
   /** Se está exportando */
   isExporting?: boolean
+  /** Callback para atualizar dados */
+  onRefresh?: () => void
+  /** Se está atualizando */
+  isRefreshing?: boolean
 }
 
 /**
@@ -32,6 +36,8 @@ export function AnalyticsHeader({
   onLinkChange,
   onExport,
   isExporting = false,
+  onRefresh,
+  isRefreshing = false,
 }: AnalyticsHeaderProps) {
   return (
     <PageHeader
@@ -45,6 +51,19 @@ export function AnalyticsHeader({
             selectedLink={selectedLink}
             onLinkChange={onLinkChange}
           />
+          {onRefresh && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              aria-label="Atualizar dados"
+            >
+              <RefreshCwIcon
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+          )}
           <Button variant="outline" onClick={onExport} disabled={isExporting}>
             <DownloadIcon className="mr-2 h-4 w-4" />
             {isExporting ? "Exportando..." : "Exportar Relatório"}

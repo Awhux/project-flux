@@ -77,6 +77,7 @@ export interface CaptureLeadRequest {
   utmMedium?: string
   utmCampaign?: string
   utmContent?: string
+  utmTerm?: string
 }
 
 // =============================================================================
@@ -229,5 +230,6 @@ export interface InterstitialPageData {
     medium?: string
     campaign?: string
     content?: string
+    term?: string
   }
 }

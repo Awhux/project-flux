@@ -14,5 +14,7 @@ export {
   clicksDataToCsv,
   utmDataToCsv,
   deviceDataToCsv,
+  referrerDataToCsv,
+  heatmapDataToCsv,
   exportAnalyticsToCsv,
 } from "./format-chart-data"

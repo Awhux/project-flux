@@ -5,7 +5,8 @@
  * Handles flattening/unflattening of interstitial configuration fields.
  */
 
-import type { Link as PrismaLink, Prisma } from "@prisma/client"
+import type { Link as PrismaLink } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 import type { ApiLink, CreateLinkRequest } from "../types/api.types"
 import type { InterstitialFormData, Testimonial } from "../types/links.types"
 import { DEFAULT_INTERSTITIAL_CONFIG } from "@/features/interstitial"
@@ -41,45 +42,66 @@ export function prismaLinkToApiLink(link: PrismaLink): ApiLink {
 
 /**
  * Extract interstitial configuration from Prisma Link fields
+ * 
+ * Uses nullish coalescing (??) for fields where null should use defaults,
+ * and OR (||) for fields where empty strings should also use defaults.
+ * This ensures custom values are preserved when they exist in the database.
  */
 export function extractInterstitialConfig(link: PrismaLink): InterstitialFormData {
   // Parse testimonials from JSON
   let testimonials: Testimonial[] = []
   if (link.testimonials && typeof link.testimonials === "object") {
     try {
-      testimonials = link.testimonials as Testimonial[]
+      // Handle both array directly or wrapped in object
+      // Use unknown as intermediate type for safe casting
+      testimonials = Array.isArray(link.testimonials)
+        ? (link.testimonials as unknown as Testimonial[])
+        : []
     } catch {
       testimonials = []
     }
   }
 
   return {
-    logo: link.interstitialLogo || "",
+    // Optional string fields - use empty string if not set
+    logo: link.interstitialLogo ?? "",
+    bgImage: link.interstitialBgImage ?? "",
+    privacyPolicyUrl: link.privacyUrl ?? "",
+    customCss: link.customCss ?? "",
+    countdownRedirectUrl: link.countdownRedirectUrl ?? "",
+    exitIntentMessage: link.exitIntentMessage ?? "",
+    exitIntentOfferText: link.exitIntentOffer ?? "",
+
+    // Required string fields - use defaults if null or empty
     headline: link.interstitialHeadline || DEFAULT_INTERSTITIAL_CONFIG.headline,
     description: link.interstitialDescription || DEFAULT_INTERSTITIAL_CONFIG.description,
     buttonText: link.interstitialButtonText || DEFAULT_INTERSTITIAL_CONFIG.buttonText,
     bgColor: link.interstitialBgColor || DEFAULT_INTERSTITIAL_CONFIG.bgColor,
-    bgImage: link.interstitialBgImage || "",
+    phoneLabel: link.phoneLabel || DEFAULT_INTERSTITIAL_CONFIG.phoneLabel,
+    privacyCheckboxText: link.privacyText || DEFAULT_INTERSTITIAL_CONFIG.privacyCheckboxText,
+    socialProofText: link.socialProofText || DEFAULT_INTERSTITIAL_CONFIG.socialProofText,
+
+    // Theme - must be valid enum value
+    theme: (link.interstitialTheme === "light" || link.interstitialTheme === "dark")
+      ? link.interstitialTheme
+      : DEFAULT_INTERSTITIAL_CONFIG.theme,
+
+    // Numeric fields - use ?? to handle 0 correctly
     bgOverlayOpacity: link.interstitialBgOverlay ?? DEFAULT_INTERSTITIAL_CONFIG.bgOverlayOpacity,
-    theme: (link.interstitialTheme as "light" | "dark") || DEFAULT_INTERSTITIAL_CONFIG.theme,
+    countdownSeconds: link.countdownSeconds ?? DEFAULT_INTERSTITIAL_CONFIG.countdownSeconds,
+    socialProofCount: link.socialProofCount ?? DEFAULT_INTERSTITIAL_CONFIG.socialProofCount,
+
+    // Boolean fields - direct assignment (DB defaults handle nulls)
     collectName: link.collectName,
     nameRequired: link.nameRequired,
     collectEmail: link.collectEmail,
     emailRequired: link.emailRequired,
-    phoneLabel: link.phoneLabel || DEFAULT_INTERSTITIAL_CONFIG.phoneLabel,
-    privacyPolicyUrl: link.privacyUrl || "",
-    privacyCheckboxText: link.privacyText || DEFAULT_INTERSTITIAL_CONFIG.privacyCheckboxText,
-    customCss: link.customCss || "",
     countdownEnabled: link.countdownEnabled,
-    countdownSeconds: link.countdownSeconds ?? DEFAULT_INTERSTITIAL_CONFIG.countdownSeconds,
-    countdownRedirectUrl: link.countdownRedirectUrl || "",
     socialProofEnabled: link.socialProofEnabled,
-    socialProofCount: link.socialProofCount ?? DEFAULT_INTERSTITIAL_CONFIG.socialProofCount,
-    socialProofText: link.socialProofText || DEFAULT_INTERSTITIAL_CONFIG.socialProofText,
     exitIntentEnabled: link.exitIntentEnabled,
-    exitIntentMessage: link.exitIntentMessage || "",
-    exitIntentOfferText: link.exitIntentOffer || "",
-    securityBadges: link.securityBadges || [],
+
+    // Array fields - use empty array if null
+    securityBadges: link.securityBadges ?? [],
     testimonials,
   }
 }
@@ -143,8 +165,8 @@ export function createRequestToPrismaInput(
       exitIntentOffer: interstitial.exitIntentOfferText || null,
       securityBadges: interstitial.securityBadges || [],
       testimonials: interstitial.testimonials?.length
-        ? (interstitial.testimonials as unknown as Prisma.JsonValue)
-        : Prisma.JsonNull,
+        ? (interstitial.testimonials as unknown as Prisma.InputJsonValue)
+        : Prisma.DbNull,
     }),
   }
 }
@@ -211,8 +233,8 @@ export function updateRequestToPrismaInput(
     if (i.securityBadges !== undefined) update.securityBadges = i.securityBadges
     if (i.testimonials !== undefined) {
       update.testimonials = i.testimonials?.length
-        ? (i.testimonials as unknown as Prisma.JsonValue)
-        : Prisma.JsonNull
+        ? (i.testimonials as unknown as Prisma.InputJsonValue)
+        : Prisma.DbNull
     }
   }
 

@@ -1,12 +1,14 @@
 /**
  * Leads API Route
  * 
+ * GET /api/leads - List leads for authenticated user
  * POST /api/leads - Capture a lead from interstitial form
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { prisma } from "@/features/database/server"
+import { getUserSession } from "@/features/auth/application/services/session.service"
 import {
   generateLeadId,
   generateRequestId,
@@ -14,12 +16,105 @@ import {
   detectDeviceType,
 } from "@/features/links/services"
 import { recordClick, getClientIp } from "@/features/analytics/services"
+import {
+  findLeadsByUserId,
+  getLeadStats,
+} from "@/features/leads/infrastructure"
+import { prismaLeadToApiLead } from "@/features/leads/services"
 import type {
   CaptureLeadRequest,
   CaptureLeadResponse,
   ApiErrorResponse,
 } from "@/features/links/types/api.types"
+import type {
+  ListLeadsResponse,
+  ListLeadsQuery,
+} from "@/features/leads/types"
 import { z } from "zod"
+
+const ITEMS_PER_PAGE = 50
+
+/**
+ * GET /api/leads
+ * List leads for the authenticated user with filtering and pagination
+ */
+export async function GET(request: NextRequest) {
+  const requestId = generateRequestId()
+
+  try {
+    // Get authenticated user
+    const session = await getUserSession()
+    if (!session?.user?.id) {
+      return NextResponse.json<ApiErrorResponse>(
+        { error: { message: "Unauthorized", code: "UNAUTHORIZED" }, requestId },
+        { status: 401 }
+      )
+    }
+
+    const userId = session.user.id
+
+    // Parse query parameters
+    const { searchParams } = new URL(request.url)
+    const query: ListLeadsQuery = {
+      linkId: searchParams.get("linkId") || undefined,
+      dateRange: (searchParams.get("dateRange") as ListLeadsQuery["dateRange"]) || "all",
+      page: parseInt(searchParams.get("page") || "1", 10),
+      limit: parseInt(searchParams.get("limit") || String(ITEMS_PER_PAGE), 10),
+    }
+
+    // Validate pagination
+    const page = Math.max(1, query.page || 1)
+    const limit = Math.min(100, Math.max(1, query.limit || ITEMS_PER_PAGE))
+    const skip = (page - 1) * limit
+
+    // Fetch leads and stats in parallel
+    const [{ leads, total }, stats] = await Promise.all([
+      findLeadsByUserId({
+        userId,
+        linkId: query.linkId,
+        dateRange: query.dateRange,
+        pagination: { skip, take: limit },
+      }),
+      getLeadStats({
+        userId,
+        linkId: query.linkId,
+      }),
+    ])
+
+    // Transform to API format
+    const apiLeads = leads.map(prismaLeadToApiLead)
+
+    const response: ListLeadsResponse = {
+      leads: apiLeads,
+      stats: {
+        totalLeads: stats.totalLeads,
+        leadsThisWeek: stats.leadsThisWeek,
+        leadsThisMonth: stats.leadsThisMonth,
+      },
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+      },
+    }
+
+    return NextResponse.json(response)
+  } catch (error) {
+    console.error("Error listing leads:", error)
+    return NextResponse.json<ApiErrorResponse>(
+      {
+        error: {
+          message: "Failed to list leads",
+          code: "INTERNAL_ERROR",
+          details: error instanceof Error ? { message: error.message } : undefined,
+        },
+        requestId,
+      },
+      { status: 500 }
+    )
+  }
+}
 
 const captureLeadSchema = z.object({
   linkId: z.string().min(1, "Link ID is required"),

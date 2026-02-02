@@ -251,6 +251,9 @@ model Lead {
   @@index([userId])
   @@index([phone])
   @@index([convertedAt])
+  // Composite indexes for optimized queries
+  @@index([userId, convertedAt(sort: Desc)])
+  @@index([userId, linkId, convertedAt(sort: Desc)])
   @@map("leads")
 }
 

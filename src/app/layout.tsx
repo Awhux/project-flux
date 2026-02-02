@@ -3,6 +3,7 @@ import '@/styles/globals.css'
 import { Toaster } from "@/components/ui/sonner";
 import { createFontClassList } from "@/utils/fonts";
 import { cn } from "@/lib/utils";
+import { QueryProvider } from "@/lib/providers";
 
 export const metadata: Metadata = {
   title: {
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body
         className={cn(createFontClassList(), "antialiased")}
       >
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
         <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>

@@ -5,12 +5,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { headers } from "next/headers"
 import { prisma } from "@/features/database/server"
 import {
   generateLeadId,
   generateRequestId,
   buildWhatsAppUrl,
+  detectDeviceType,
 } from "@/features/links/services"
+import { recordClick, getClientIp } from "@/features/analytics/services"
 import type {
   CaptureLeadRequest,
   CaptureLeadResponse,
@@ -30,6 +33,7 @@ const captureLeadSchema = z.object({
   utmMedium: z.string().max(255).optional(),
   utmCampaign: z.string().max(255).optional(),
   utmContent: z.string().max(255).optional(),
+  utmTerm: z.string().max(255).optional(),
 })
 
 /**
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { linkId, phone, name, email, utmSource, utmMedium, utmCampaign, utmContent } =
+    const { linkId, phone, name, email, utmSource, utmMedium, utmCampaign, utmContent, utmTerm } =
       validationResult.data
 
     // Get link from database
@@ -93,11 +97,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Extract request metadata for click tracking
+    const headersList = await headers()
+    const ipAddress = getClientIp(headersList, request)
+    const userAgent = headersList.get("user-agent")
+    const referrer = headersList.get("referer")
+
+    // Detect device type
+    const device = detectDeviceType(userAgent)
+
+    // Extract Facebook tracking params from query string
+    const { searchParams } = new URL(request.url)
+    const fbp = searchParams.get("_fbp") || undefined
+    const fbc = searchParams.get("_fbc") || undefined
+
+    // Use default UTM values if not provided
+    const finalUtm = {
+      source: utmSource || link.defaultUtmSource || undefined,
+      medium: utmMedium || link.defaultUtmMedium || undefined,
+      campaign: utmCampaign || link.defaultUtmCampaign || undefined,
+      content: utmContent || link.defaultUtmContent || undefined,
+      term: utmTerm || undefined,
+    }
+
     // Clean phone number (remove formatting)
     const cleanPhone = phone.replace(/\D/g, "")
 
     // Generate lead ID
     const leadId = generateLeadId()
+
+    // Record click event - errors are logged but don't block lead capture
+    try {
+      await recordClick(link.id, link.userId, {
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        referrer: referrer || null,
+        device,
+        utmSource: finalUtm.source || null,
+        utmMedium: finalUtm.medium || null,
+        utmCampaign: finalUtm.campaign || null,
+        utmContent: finalUtm.content || null,
+        utmTerm: finalUtm.term || null,
+        fbp: fbp || null,
+        fbc: fbc || null,
+      })
+    } catch (clickError) {
+      // Log error but don't block lead capture - user experience is priority
+      console.error("Failed to record click:", clickError)
+    }
 
     // Create lead in database and increment counter
     await prisma.$transaction([
@@ -109,10 +156,10 @@ export async function POST(request: NextRequest) {
           phone: cleanPhone,
           name: name || null,
           email: email || null,
-          utmSource: utmSource || link.defaultUtmSource || null,
-          utmMedium: utmMedium || link.defaultUtmMedium || null,
-          utmCampaign: utmCampaign || link.defaultUtmCampaign || null,
-          utmContent: utmContent || link.defaultUtmContent || null,
+          utmSource: finalUtm.source || null,
+          utmMedium: finalUtm.medium || null,
+          utmCampaign: finalUtm.campaign || null,
+          utmContent: finalUtm.content || null,
         },
       }),
       prisma.link.update({
@@ -125,12 +172,7 @@ export async function POST(request: NextRequest) {
     const whatsappUrl = buildWhatsAppUrl(
       link.destinationNumber,
       link.messageTemplate,
-      {
-        source: utmSource || link.defaultUtmSource || undefined,
-        medium: utmMedium || link.defaultUtmMedium || undefined,
-        campaign: utmCampaign || link.defaultUtmCampaign || undefined,
-        content: utmContent || link.defaultUtmContent || undefined,
-      }
+      finalUtm
     )
 
     const response: CaptureLeadResponse = {

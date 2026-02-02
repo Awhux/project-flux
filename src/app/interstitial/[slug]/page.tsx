@@ -7,7 +7,7 @@
  * Route: /interstitial/:slug
  */
 
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/features/database/server"
 import { extractInterstitialConfig } from "@/features/links/services/link-mapper.service"
 import { InterstitialClient } from "./interstitial-client"
@@ -26,9 +26,14 @@ export default async function InterstitialPage({ params, searchParams }: Interst
     where: { slug },
   })
 
-  // Return 404 if not found or inactive
-  if (!link || !link.isActive) {
+  // Return 404 if not found
+  if (!link) {
     notFound()
+  }
+
+  // Redirect to link-inactive page if link is inactive
+  if (!link.isActive) {
+    redirect("/link-inactive")
   }
 
   // Extract interstitial config from link
@@ -40,6 +45,7 @@ export default async function InterstitialPage({ params, searchParams }: Interst
     medium: typeof search.utm_medium === "string" ? search.utm_medium : undefined,
     campaign: typeof search.utm_campaign === "string" ? search.utm_campaign : undefined,
     content: typeof search.utm_content === "string" ? search.utm_content : undefined,
+    term: typeof search.utm_term === "string" ? search.utm_term : undefined,
   }
 
   return (

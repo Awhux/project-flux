@@ -23,6 +23,7 @@ interface InterstitialClientProps {
     medium?: string
     campaign?: string
     content?: string
+    term?: string
   }
   defaultUtm: {
     source?: string
@@ -39,32 +40,46 @@ export function InterstitialClient({
   defaultUtm,
 }: InterstitialClientProps) {
   // Convert LinkInterstitialFormData to InterstitialConfig format
+  // The config from extractInterstitialConfig already has all proper defaults applied
   const interstitialConfig: InterstitialConfig = {
+    // Optional fields - convert empty string to undefined for cleaner rendering
     logo: config.logo || undefined,
+    bgImage: config.bgImage || undefined,
+
+    // Required string fields - pass through directly (already have defaults)
     headline: config.headline,
     description: config.description,
     buttonText: config.buttonText,
     bgColor: config.bgColor,
-    bgImage: config.bgImage || undefined,
+    phoneLabel: config.phoneLabel,
+    privacyCheckboxText: config.privacyCheckboxText,
+    socialProofText: config.socialProofText,
+
+    // String fields with default empty - ensure string type
+    privacyPolicyUrl: config.privacyPolicyUrl ?? "",
+    customCss: config.customCss ?? "",
+    countdownRedirectUrl: config.countdownRedirectUrl ?? "",
+    exitIntentMessage: config.exitIntentMessage ?? "",
+    exitIntentOfferText: config.exitIntentOfferText ?? "",
+
+    // Numeric fields - pass through (already have defaults)
     bgOverlayOpacity: config.bgOverlayOpacity,
-    theme: config.theme,
+    countdownSeconds: config.countdownSeconds,
+    socialProofCount: config.socialProofCount,
+
+    // Boolean fields - pass through directly
     collectName: config.collectName,
     nameRequired: config.nameRequired,
     collectEmail: config.collectEmail,
     emailRequired: config.emailRequired,
-    phoneLabel: config.phoneLabel,
-    privacyPolicyUrl: config.privacyPolicyUrl || "",
-    privacyCheckboxText: config.privacyCheckboxText,
-    customCss: config.customCss || "",
     countdownEnabled: config.countdownEnabled,
-    countdownSeconds: config.countdownSeconds,
-    countdownRedirectUrl: config.countdownRedirectUrl || "",
     socialProofEnabled: config.socialProofEnabled,
-    socialProofCount: config.socialProofCount,
-    socialProofText: config.socialProofText,
     exitIntentEnabled: config.exitIntentEnabled,
-    exitIntentMessage: config.exitIntentMessage || "",
-    exitIntentOfferText: config.exitIntentOfferText || "",
+
+    // Theme
+    theme: config.theme,
+
+    // Arrays - pass through directly
     securityBadges: config.securityBadges,
     testimonials: config.testimonials,
   }
@@ -78,6 +93,7 @@ export function InterstitialClient({
         medium: utmParams.medium || defaultUtm.medium,
         campaign: utmParams.campaign || defaultUtm.campaign,
         content: utmParams.content || defaultUtm.content,
+        term: utmParams.term, // term has no default, only passed via URL
       }
 
       // Call leads API
@@ -95,6 +111,7 @@ export function InterstitialClient({
           utmMedium: finalUtm.medium,
           utmCampaign: finalUtm.campaign,
           utmContent: finalUtm.content,
+          utmTerm: finalUtm.term,
         }),
       })
 

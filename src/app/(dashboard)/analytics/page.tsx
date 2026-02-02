@@ -9,28 +9,27 @@ import {
   ReferrerChart,
   TimeHeatmap,
   LinkComparisonChart,
-  useAnalyticsData,
+  useAnalyticsQuery,
   useDateRange,
   exportAnalyticsToCsv,
-  mockReferrerData,
-  mockHeatmapData,
-  mockLinkComparisonData,
-  mockComparisonLinks,
 } from "@/features/analytics"
 import type { DateRange } from "@/features/analytics"
 import { ClicksLineChart } from "@/features/shared"
+import { Loader2 } from "lucide-react"
 
 export default function AnalyticsPage() {
   const { dateRange, setDateRange, getDateRangeLabel } = useDateRange("30")
   const [selectedLink, setSelectedLink] = React.useState("all")
   const [isExporting, setIsExporting] = React.useState(false)
 
-  const { data, isLoading } = useAnalyticsData({
+  const { data, isLoading, error, refetch, isFetching } = useAnalyticsQuery({
     selectedLink,
     dateRange,
   })
 
   const handleExport = async () => {
+    if (!data) return
+
     setIsExporting(true)
     try {
       const csv = exportAnalyticsToCsv(
@@ -38,7 +37,10 @@ export default function AnalyticsPage() {
         data.utmSource,
         data.utmMedium,
         data.utmCampaign,
-        data.deviceData
+        data.utmContent,
+        data.deviceData,
+        data.referrerData,
+        data.heatmapData
       )
 
       // Cria e baixa o arquivo CSV
@@ -56,6 +58,51 @@ export default function AnalyticsPage() {
     }
   }
 
+  const handleRefresh = () => {
+    refetch()
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Carregando analytics...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <p className="text-destructive">Erro ao carregar analytics</p>
+          <p className="text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Tente novamente mais tarde"}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // No data state
+  if (!data) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <p className="text-muted-foreground">Nenhum dado disponível</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 md:space-y-8">
       {/* Cabeçalho com Filtros */}
@@ -66,6 +113,8 @@ export default function AnalyticsPage() {
         onLinkChange={setSelectedLink}
         onExport={handleExport}
         isExporting={isExporting}
+        onRefresh={handleRefresh}
+        isRefreshing={isFetching}
       />
 
       {/* Cards de Métricas */}
@@ -85,7 +134,7 @@ export default function AnalyticsPage() {
           sourceData={data.utmSource}
           mediumData={data.utmMedium}
           campaignData={data.utmCampaign}
-          contentData={[]}
+          contentData={data.utmContent}
         />
 
         {/* Distribuição por Dispositivo */}
@@ -95,16 +144,16 @@ export default function AnalyticsPage() {
       {/* Novos Gráficos Analíticos */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Referrers / Domínios de Origem */}
-        <ReferrerChart data={mockReferrerData} />
+        <ReferrerChart data={data.referrerData} />
 
         {/* Heatmap de Horários */}
-        <TimeHeatmap data={mockHeatmapData} />
+        <TimeHeatmap data={data.heatmapData} />
       </div>
 
       {/* Comparação de Links */}
       <LinkComparisonChart
-        data={mockLinkComparisonData}
-        links={mockComparisonLinks}
+        data={data.linkComparisonData}
+        links={data.comparisonLinks}
       />
     </div>
   )

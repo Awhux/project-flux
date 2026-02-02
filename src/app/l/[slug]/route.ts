@@ -14,12 +14,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { prisma } from "@/features/database/server"
 import {
-  generateClickId,
   detectDeviceType,
   buildWhatsAppUrl,
   extractUtmFromSearchParams,
   buildUtmQueryString,
 } from "@/features/links/services"
+import { recordClick, getClientIp } from "@/features/analytics/services"
 
 interface RouteParams {
   params: Promise<{ slug: string }>
@@ -76,32 +76,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Detect device type
     const device = detectDeviceType(userAgent)
 
-    // Record click event
-    const clickId = generateClickId()
-    await prisma.$transaction([
-      prisma.click.create({
-        data: {
-          id: clickId,
-          linkId: link.id,
-          userId: link.userId,
-          ipAddress: ipAddress || null,
-          userAgent: userAgent || null,
-          referrer: referrer || null,
-          device,
-          utmSource: finalUtm.source || null,
-          utmMedium: finalUtm.medium || null,
-          utmCampaign: finalUtm.campaign || null,
-          utmContent: finalUtm.content || null,
-          utmTerm: finalUtm.term || null,
-          fbp: fbp || null,
-          fbc: fbc || null,
-        },
-      }),
-      prisma.link.update({
-        where: { id: link.id },
-        data: { clickCount: { increment: 1 } },
-      }),
-    ])
+    // Record click event - errors are logged but don't block redirect
+    try {
+      await recordClick(link.id, link.userId, {
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
+        referrer: referrer || null,
+        device,
+        utmSource: finalUtm.source || null,
+        utmMedium: finalUtm.medium || null,
+        utmCampaign: finalUtm.campaign || null,
+        utmContent: finalUtm.content || null,
+        utmTerm: finalUtm.term || null,
+        fbp: fbp || null,
+        fbc: fbc || null,
+      })
+    } catch (clickError) {
+      // Log error but don't block redirect - user experience is priority
+      console.error("Failed to record click:", clickError)
+    }
 
     // Determine redirect destination
     if (link.ghostMode) {
@@ -129,32 +122,3 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-/**
- * Get client IP address from headers
- * Handles common proxy headers
- */
-function getClientIp(
-  headersList: Awaited<ReturnType<typeof headers>>,
-  request: NextRequest
-): string | null {
-  // Check common proxy headers
-  const forwardedFor = headersList.get("x-forwarded-for")
-  if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, get the first one
-    return forwardedFor.split(",")[0].trim()
-  }
-
-  const realIp = headersList.get("x-real-ip")
-  if (realIp) {
-    return realIp
-  }
-
-  // Vercel/Cloudflare specific headers
-  const cfConnectingIp = headersList.get("cf-connecting-ip")
-  if (cfConnectingIp) {
-    return cfConnectingIp
-  }
-
-  // Fallback to request IP (might be localhost in development)
-  return request.ip || null
-}

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import {
   SettingsHeader,
   SettingsTabs,
@@ -14,7 +15,9 @@ import {
 import type { SettingsTab } from "@/features/settings"
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = React.useState<SettingsTab>("account")
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab") as SettingsTab | null
+  const [activeTab, setActiveTab] = React.useState<SettingsTab>(tabParam || "account")
   const [isUpgrading, setIsUpgrading] = React.useState(false)
 
   const {
@@ -27,6 +30,13 @@ export default function SettingsPage() {
     updateApiSettings,
     regenerateApiKey,
   } = useSettings()
+
+  // Update active tab when URL changes
+  React.useEffect(() => {
+    if (tabParam && ["account", "plan", "api", "preferences"].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   const handlePlanSelect = async (planId: string) => {
     setIsUpgrading(true)

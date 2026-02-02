@@ -10,6 +10,7 @@ export const publicRouteMatcher = createRouteMatcher([
   '/favicon.ico',
   '/policies/{/*path}',
   '/l{/*path}',
+  '/api/auth{/*path}',
 ])
 
 /**
@@ -19,7 +20,6 @@ export const publicRouteMatcher = createRouteMatcher([
 export const guestRouteMatcher = createRouteMatcher([
   '/auth/sign-up{/*path}',
   '/auth/sign-in{/*path}',
-  '/api/auth{/*path}',
 ])
 
 /**

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { tabOptions } from "../config/settings.config"
 import type { SettingsTab } from "../types"
@@ -16,8 +17,8 @@ export interface SettingsTabsProps {
   className?: string
 }
 
-// MVP: Only account tab is enabled for now
-const ENABLED_TABS: SettingsTab[] = ["account"]
+// All tabs are enabled
+const ENABLED_TABS: SettingsTab[] = ["account", "plan", "api", "preferences"]
 
 /**
  * Container de tabs para as configurações
@@ -28,11 +29,16 @@ export function SettingsTabs({
   children,
   className,
 }: SettingsTabsProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
   const handleTabChange = (value: string) => {
     const tab = value as SettingsTab
     // Prevent navigation to disabled tabs
     if (ENABLED_TABS.includes(tab)) {
       onTabChange(tab)
+      // Update URL with tab query parameter
+      router.push(`${pathname}?tab=${tab}`, { scroll: false })
     }
   }
 

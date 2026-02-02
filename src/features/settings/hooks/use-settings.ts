@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
+import { authClient } from "@/features/auth/client"
 import { defaultSettings } from "../config/settings.config"
 import type {
   SettingsState,
@@ -34,19 +36,43 @@ interface UseSettingsReturn {
  * Hook para gerenciar o estado das configurações
  */
 export function useSettings(): UseSettingsReturn {
+  const { data: session } = authClient.useSession()
   const [settings, setSettings] = React.useState<SettingsState>(defaultSettings)
   const [isLoading, setIsLoading] = React.useState(false)
 
-  // Simula chamada à API
-  const simulateApiCall = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
+  // Atualiza o perfil quando a sessão mudar
+  React.useEffect(() => {
+    if (session?.user) {
+      const user = session.user
+      const profile: UserProfile = {
+        firstName: user.name?.split(" ")[0] || "",
+        lastName: user.name?.split(" ").slice(1).join(" ") || "",
+        email: user.email || "",
+        phone: "", // Better Auth doesn't store phone by default
+        avatarUrl: user.image || "",
+      }
+      setSettings((prev) => ({ ...prev, profile }))
+    }
+  }, [session])
 
   const updateProfile = async (profile: UserProfile) => {
     setIsLoading(true)
     try {
-      await simulateApiCall()
+      // Update user profile using Better Auth
+      const { error } = await authClient.updateUser({
+        name: `${profile.firstName} ${profile.lastName}`.trim(),
+        image: profile.avatarUrl,
+      })
+
+      if (error) {
+        toast.error("Erro ao atualizar perfil")
+        throw error
+      }
+
       setSettings((prev) => ({ ...prev, profile }))
+      toast.success("Perfil atualizado com sucesso")
+    } catch (error) {
+      console.error("Error updating profile:", error)
     } finally {
       setIsLoading(false)
     }
@@ -55,9 +81,20 @@ export function useSettings(): UseSettingsReturn {
   const updatePassword = async (data: PasswordChangeData) => {
     setIsLoading(true)
     try {
-      await simulateApiCall()
-      // Em produção, enviaria para a API
-      console.log("Password updated:", data)
+      const { error } = await authClient.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        revokeOtherSessions: false,
+      })
+
+      if (error) {
+        toast.error(error.message || "Erro ao alterar senha")
+        throw error
+      }
+
+      toast.success("Senha alterada com sucesso")
+    } catch (error) {
+      console.error("Error updating password:", error)
     } finally {
       setIsLoading(false)
     }
@@ -71,13 +108,16 @@ export function useSettings(): UseSettingsReturn {
         [key]: value,
       },
     }))
+    // TODO: Persist notification settings to backend
   }
 
   const updateRegional = async (regional: RegionalSettings) => {
     setIsLoading(true)
     try {
-      await simulateApiCall()
+      // TODO: Persist regional settings to backend
+      await new Promise((resolve) => setTimeout(resolve, 500))
       setSettings((prev) => ({ ...prev, regional }))
+      toast.success("Configurações regionais atualizadas")
     } finally {
       setIsLoading(false)
     }
@@ -86,11 +126,13 @@ export function useSettings(): UseSettingsReturn {
   const updateApiSettings = async (apiSettings: Partial<ApiSettings>) => {
     setIsLoading(true)
     try {
-      await simulateApiCall()
+      // TODO: Persist API settings to backend
+      await new Promise((resolve) => setTimeout(resolve, 500))
       setSettings((prev) => ({
         ...prev,
         api: { ...prev.api, ...apiSettings },
       }))
+      toast.success("Configurações de API atualizadas")
     } finally {
       setIsLoading(false)
     }
@@ -99,13 +141,14 @@ export function useSettings(): UseSettingsReturn {
   const regenerateApiKey = async () => {
     setIsLoading(true)
     try {
-      await simulateApiCall()
-      // Simula geração de nova chave
+      // TODO: Call backend to regenerate API key
+      await new Promise((resolve) => setTimeout(resolve, 500))
       const newKey = `zaplink_${Math.random().toString(36).substring(2, 18)}`
       setSettings((prev) => ({
         ...prev,
         api: { ...prev.api, apiKey: newKey },
       }))
+      toast.success("Chave de API regenerada")
     } finally {
       setIsLoading(false)
     }

@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   UserIcon,
   SettingsIcon,
   LogOutIcon,
   SparklesIcon,
 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -19,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
-import { mockUser, mockPlan } from "../config/navigation.config"
+import { authClient } from "@/features/auth/client"
 
 export interface UserMenuProps {
   /** Additional CSS classes */
@@ -31,8 +33,70 @@ export interface UserMenuProps {
  * Consolidates user actions and plan information
  */
 export function UserMenu({ className }: UserMenuProps) {
-  const user = mockUser
-  const plan = mockPlan
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
+
+  const user = session?.user
+  const userName = user?.name || "Usuário"
+  const userEmail = user?.email || ""
+  const userImage = user?.image || undefined
+
+  // Get initials from name
+  const getInitials = () => {
+    if (user?.name) {
+      const nameParts = user.name.split(" ")
+      if (nameParts.length >= 2) {
+        return `${nameParts[0].charAt(0)}${nameParts[nameParts.length - 1].charAt(0)}`.toUpperCase()
+      }
+      return user.name.substring(0, 2).toUpperCase()
+    }
+    return "US"
+  }
+
+  // TODO: Get plan info from your subscription system
+  const plan = {
+    name: "Gratuito",
+    isPaid: false,
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Você saiu com sucesso")
+            router.refresh()
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message || "Erro ao sair")
+          },
+        },
+      })
+    } catch (error) {
+      toast.error("Erro ao sair")
+    }
+  }
+
+  if (isPending) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn("rounded-full", className)}
+        disabled
+      >
+        <Avatar size="sm">
+          <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+            ...
+          </AvatarFallback>
+        </Avatar>
+      </Button>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
 
   return (
     <DropdownMenu>
@@ -46,12 +110,12 @@ export function UserMenu({ className }: UserMenuProps) {
         }
       >
         <Avatar size="sm">
-          {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
+          {userImage && <AvatarImage src={userImage} alt={userName} />}
           <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-            {user.initials}
+            {getInitials()}
           </AvatarFallback>
         </Avatar>
-        <span className="sr-only">User menu</span>
+        <span className="sr-only">Menu do usuário</span>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56">
@@ -59,7 +123,7 @@ export function UserMenu({ className }: UserMenuProps) {
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">{user.name}</p>
+              <p className="text-sm font-medium">{userName}</p>
               <Badge
                 variant={plan.isPaid ? "default" : "secondary"}
                 className="text-[10px] px-1.5 py-0"
@@ -67,7 +131,7 @@ export function UserMenu({ className }: UserMenuProps) {
                 {plan.name}
               </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground">{userEmail}</p>
           </div>
         </DropdownMenuLabel>
 
@@ -76,29 +140,35 @@ export function UserMenu({ className }: UserMenuProps) {
         {/* Upgrade Plan - Only show for free users */}
         {!plan.isPaid && (
           <>
-            <DropdownMenuItem asChild>
-              <Link href="/settings/billing" className="cursor-pointer">
-                <SparklesIcon className="mr-2 size-4 text-primary" />
-                <span>Upgrade Plan</span>
-              </Link>
+            <DropdownMenuItem
+              render={
+                <Link href="/settings?tab=plan" className="cursor-pointer" />
+              }
+            >
+              <SparklesIcon className="mr-2 size-4 text-primary" />
+              <span>Fazer Upgrade</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
 
         {/* Profile & Settings */}
-        <DropdownMenuItem asChild>
-          <Link href="/settings/profile" className="cursor-pointer">
-            <UserIcon className="mr-2 size-4" />
-            <span>Profile</span>
-          </Link>
+        <DropdownMenuItem
+          render={
+            <Link href="/settings?tab=account" className="cursor-pointer" />
+          }
+        >
+          <UserIcon className="mr-2 size-4" />
+          <span>Perfil</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem asChild>
-          <Link href="/settings" className="cursor-pointer">
-            <SettingsIcon className="mr-2 size-4" />
-            <span>Settings</span>
-          </Link>
+        <DropdownMenuItem
+          render={
+            <Link href="/settings" className="cursor-pointer" />
+          }
+        >
+          <SettingsIcon className="mr-2 size-4" />
+          <span>Configurações</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
@@ -107,9 +177,10 @@ export function UserMenu({ className }: UserMenuProps) {
         <DropdownMenuItem
           variant="destructive"
           className="cursor-pointer"
+          onClick={handleSignOut}
         >
           <LogOutIcon className="mr-2 size-4" />
-          <span>Sign Out</span>
+          <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

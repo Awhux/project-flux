@@ -145,7 +145,7 @@ export function LeadsTable({
                         href="/links"
                         className="text-sm font-medium text-primary hover:underline"
                       >
-                        zap.lk/{lead.link}
+                        zap.lk/{lead.linkSlug}
                       </a>
                     </TableCell>
 

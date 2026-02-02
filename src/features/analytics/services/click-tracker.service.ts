@@ -31,8 +31,11 @@ export interface ClickData {
 /**
  * Record a click event in the database
  * 
- * Uses a transaction to ensure both the click record and counter are updated atomically.
- * This function handles both the Click table insertion and the Link clickCount increment.
+ * Uses a transaction to ensure both the click record and counters are updated atomically.
+ * This function handles:
+ * - Click table insertion
+ * - Link clickCount increment
+ * - UsageLimit clicksUsed increment (for plan enforcement)
  * 
  * @param linkId - ID of the link being clicked
  * @param userId - ID of the user who owns the link
@@ -68,10 +71,33 @@ export async function recordClick(
       },
     })
 
-    // Increment the click counter
+    // Increment the click counter on the link
     await tx.link.update({
       where: { id: linkId },
       data: { clickCount: { increment: 1 } },
+    })
+
+    // Increment the user's monthly usage counter
+    // Use upsert to handle missing UsageLimit records gracefully
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    await tx.usageLimit.upsert({
+      where: { userId },
+      update: {
+        clicksUsed: { increment: 1 },
+      },
+      create: {
+        userId,
+        clicksUsed: 1,
+        linksCreated: 0,
+        leadsCollected: 0,
+        clicksLimit: 100, // Default FREE plan limit
+        linksLimit: 1,
+        periodStart: startOfMonth,
+        periodEnd: endOfMonth,
+      },
     })
   })
 }

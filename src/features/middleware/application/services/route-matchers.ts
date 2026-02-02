@@ -9,6 +9,7 @@ export const publicRouteMatcher = createRouteMatcher([
   '/manifest.webmanifest',
   '/favicon.ico',
   '/policies/{/*path}',
+  '/l{/*path}',
 ])
 
 /**

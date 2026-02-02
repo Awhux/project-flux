@@ -35,6 +35,8 @@ export interface UsageCardProps {
   limit: number
   /** Nível do plano */
   planTier: PlanTier
+  /** Variante do layout */
+  variant?: "default" | "horizontal"
   /** Classes CSS adicionais */
   className?: string
 }
@@ -42,8 +44,18 @@ export interface UsageCardProps {
 /**
  * Card de indicador de uso do plano
  * Mostra o consumo atual e alerta quando próximo do limite
+ * 
+ * Variantes:
+ * - default: Layout vertical tradicional
+ * - horizontal: Layout compacto em linha única para uso abaixo das métricas
  */
-export function UsageCard({ current, limit, planTier, className }: UsageCardProps) {
+export function UsageCard({
+  current,
+  limit,
+  planTier,
+  variant = "default",
+  className
+}: UsageCardProps) {
   const percentage = (current / limit) * 100
   const remaining = limit - current
 
@@ -63,6 +75,50 @@ export function UsageCard({ current, limit, planTier, className }: UsageCardProp
 
   const showWarning = percentage >= 80
 
+  // Horizontal variant - compact single row layout
+  if (variant === "horizontal") {
+    return (
+      <Card className={cn("", className)}>
+        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left: Title and Badge */}
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-base sm:text-lg">Uso Este Mês</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                {planLabels[planTier]}: {formatNumber(limit)} cliques/mês
+              </CardDescription>
+            </div>
+            <Badge className={cn(planBadgeVariants({ tier: planTier }), "shrink-0")}>
+              {planTier}
+            </Badge>
+          </div>
+
+          {/* Center: Progress Bar */}
+          <div className="flex-1 space-y-1 sm:max-w-md">
+            <Progress value={percentage} className="h-2" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                {formatNumber(current)} cliques
+              </span>
+              <span>{formatNumber(remaining)} restantes</span>
+            </div>
+          </div>
+
+          {/* Right: Warning or Upgrade CTA */}
+          {showWarning && planTier === "FREE" && (
+            <div className="flex items-center gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 px-3 py-2">
+              <AlertCircleIcon className="h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-xs font-medium text-yellow-900 dark:text-yellow-100">
+                Próximo do limite
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Default vertical variant
   return (
     <Card className={cn("", className)}>
       <CardHeader className="pb-4">
@@ -95,7 +151,7 @@ export function UsageCard({ current, limit, planTier, className }: UsageCardProp
         {/* Aviso de Limite */}
         {showWarning && planTier === "FREE" && (
           <div className="flex items-start gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
-            <AlertCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
+            <AlertCircleIcon className="h-5 w-5 shrink-0 mt-0.5 text-yellow-600 dark:text-yellow-400" />
             <div className="space-y-1 text-sm">
               <p className="font-medium text-yellow-900 dark:text-yellow-100">
                 Aproximando do limite

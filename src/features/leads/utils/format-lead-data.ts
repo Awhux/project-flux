@@ -1,4 +1,4 @@
-import type { Lead, DisplayLead } from "../types"
+import type { ApiLead, DisplayLead, Lead } from "../types"
 
 /**
  * Formats a date for display in Portuguese
@@ -27,8 +27,30 @@ export function formatLeadTime(date: Date): string {
 export function transformLeadForDisplay(lead: Lead): DisplayLead {
   return {
     ...lead,
-    capturedAt: formatLeadDate(lead.capturedAt),
-    capturedTime: formatLeadTime(lead.capturedAt),
+    capturedAt: formatLeadDate(lead.convertedAt),
+    capturedTime: formatLeadTime(lead.convertedAt),
+  }
+}
+
+/**
+ * Transforms API Lead to DisplayLead for table display
+ */
+export function transformApiLeadForDisplay(apiLead: ApiLead): DisplayLead {
+  const convertedAt = new Date(apiLead.convertedAt)
+
+  return {
+    id: apiLead.id,
+    name: apiLead.name,
+    email: apiLead.email,
+    phone: apiLead.phone,
+    linkId: apiLead.linkId,
+    linkSlug: apiLead.linkSlug,
+    utmSource: apiLead.utmSource,
+    utmMedium: apiLead.utmMedium,
+    utmCampaign: apiLead.utmCampaign,
+    utmContent: apiLead.utmContent,
+    capturedAt: formatLeadDate(convertedAt),
+    capturedTime: formatLeadTime(convertedAt),
   }
 }
 

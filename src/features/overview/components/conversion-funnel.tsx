@@ -29,6 +29,8 @@ export interface ConversionFunnelProps {
 /**
  * Visualização do funil de conversão
  * Click → Lead → WhatsApp Open
+ * 
+ * Segue 70/10/10: 70% neutral (gray icons/backgrounds), 10% primary (progress bars)
  */
 export function ConversionFunnel({
   totalClicks,
@@ -70,19 +72,19 @@ export function ConversionFunnel({
       label: "Cliques",
       value: totalClicks,
       icon: MousePointer2Icon,
-      color: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+      color: "bg-muted/50 text-muted-foreground",
     },
     {
       label: "Leads Capturados",
       value: totalLeads,
       icon: UsersIcon,
-      color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+      color: "bg-muted/50 text-muted-foreground",
     },
     {
       label: "WhatsApp Abertos",
       value: totalConversions,
       icon: MessageSquareIcon,
-      color: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+      color: "bg-muted/50 text-muted-foreground",
     },
   ]
 
@@ -102,7 +104,7 @@ export function ConversionFunnel({
             <CardDescription>Jornada do clique até o WhatsApp</CardDescription>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-2xl font-bold">
               {formatPercentage(overallRate)}
             </p>
             <p className="text-xs text-muted-foreground">Conversão geral</p>
@@ -138,13 +140,10 @@ export function ConversionFunnel({
                     </div>
                   )}
                 </div>
-                {/* Progress bar */}
+                {/* Progress bar - single primary color for consistency */}
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className={cn(
-                      "h-full rounded-full transition-all duration-500",
-                      index === 0 ? "bg-blue-500" : index === 1 ? "bg-purple-500" : "bg-green-500"
-                    )}
+                    className="h-full rounded-full bg-primary transition-all duration-500"
                     style={{ width: `${getBarWidth(stage.value)}%` }}
                   />
                 </div>

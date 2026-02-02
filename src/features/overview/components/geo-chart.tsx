@@ -33,18 +33,11 @@ const chartConfig = {
   },
 }
 
-// Color palette for bars
-const COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-]
-
 /**
  * Gráfico de distribuição geográfica
  * Exibe top regiões/países por cliques
+ * 
+ * Segue 70/10/10: 70% neutral (gray backgrounds), 10% primary (progress bars)
  */
 export function GeoChart({
   data,
@@ -111,14 +104,11 @@ export function GeoChart({
                   </span>
                 </div>
               </div>
-              {/* Progress bar */}
+              {/* Progress bar - single primary color */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${item.percentage}%`,
-                    backgroundColor: COLORS[index % COLORS.length]
-                  }}
+                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  style={{ width: `${item.percentage}%` }}
                 />
               </div>
             </div>

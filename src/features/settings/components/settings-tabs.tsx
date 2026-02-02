@@ -16,6 +16,9 @@ export interface SettingsTabsProps {
   className?: string
 }
 
+// MVP: Only account tab is enabled for now
+const ENABLED_TABS: SettingsTab[] = ["account"]
+
 /**
  * Container de tabs para as configurações
  */
@@ -25,18 +28,38 @@ export function SettingsTabs({
   children,
   className,
 }: SettingsTabsProps) {
+  const handleTabChange = (value: string) => {
+    const tab = value as SettingsTab
+    // Prevent navigation to disabled tabs
+    if (ENABLED_TABS.includes(tab)) {
+      onTabChange(tab)
+    }
+  }
+
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(value) => onTabChange(value as SettingsTab)}
+      onValueChange={handleTabChange}
       className={className}
     >
       <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-        {tabOptions.map((tab) => (
-          <TabsTrigger key={tab.value} value={tab.value}>
-            {tab.label}
-          </TabsTrigger>
-        ))}
+        {tabOptions.map((tab) => {
+          const isEnabled = ENABLED_TABS.includes(tab.value as SettingsTab)
+          return (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              disabled={!isEnabled}
+              className={
+                !isEnabled
+                  ? "opacity-40 cursor-not-allowed hover:opacity-40 data-[state=active]:opacity-40"
+                  : ""
+              }
+            >
+              {tab.label}
+            </TabsTrigger>
+          )
+        })}
       </TabsList>
       {children}
     </Tabs>

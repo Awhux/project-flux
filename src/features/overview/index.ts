@@ -6,6 +6,3 @@ export * from "./hooks"
 
 // Types
 export * from "./types"
-
-// Config
-export * from "./config"

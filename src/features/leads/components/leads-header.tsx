@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PageHeader } from "@/features/shared"
-import { dateFilterOptions, linkFilterOptions } from "../config"
 import type { DateFilter } from "../types"
+import type { LinkOption } from "@/features/analytics/hooks/use-user-links-query"
 
 export interface LeadsHeaderProps {
   linkFilter: string
@@ -21,7 +21,19 @@ export interface LeadsHeaderProps {
   onDateFilterChange: (filter: DateFilter) => void
   onExport: () => void
   totalLeads: number
+  userLinks?: LinkOption[]
+  isLoadingLinks?: boolean
 }
+
+/**
+ * Date filter options in Portuguese
+ */
+const dateFilterOptions = [
+  { value: "all", label: "Todo Período" },
+  { value: "7", label: "Últimos 7 dias" },
+  { value: "30", label: "Últimos 30 dias" },
+  { value: "90", label: "Últimos 90 dias" },
+] as const
 
 /**
  * Cabeçalho da página de leads com filtros
@@ -33,7 +45,25 @@ export function LeadsHeader({
   onDateFilterChange,
   onExport,
   totalLeads,
+  userLinks,
+  isLoadingLinks,
 }: LeadsHeaderProps) {
+  // Build link filter options dynamically from user links
+  const linkFilterOptions = React.useMemo(() => {
+    const options = [{ value: "all", label: "Todos os Links" }]
+
+    if (userLinks && userLinks.length > 0) {
+      userLinks.forEach((link) => {
+        options.push({
+          value: link.id,
+          label: link.slug,
+        })
+      })
+    }
+
+    return options
+  }, [userLinks])
+
   return (
     <div className="space-y-4 lg:space-y-6">
       <PageHeader
@@ -58,7 +88,7 @@ export function LeadsHeader({
           <Select
             value={linkFilter}
             onValueChange={onLinkFilterChange}
-            items={linkFilterOptions}
+            disabled={isLoadingLinks}
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Todos os Links" />
@@ -75,7 +105,6 @@ export function LeadsHeader({
           <Select
             value={dateFilter}
             onValueChange={(v) => onDateFilterChange(v as DateFilter)}
-            items={dateFilterOptions}
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Todo Período" />

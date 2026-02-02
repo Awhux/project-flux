@@ -45,38 +45,30 @@ export interface ActivityFeedProps {
 const activityConfig: Record<ActivityType, {
   icon: React.ElementType
   label: string
-  color: string
-  bgColor: string
 }> = {
   click: {
     icon: MousePointer2Icon,
     label: "Novo clique",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
   },
   lead: {
     icon: UserPlusIcon,
     label: "Lead capturado",
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-100 dark:bg-green-900/30",
   },
   whatsapp: {
     icon: MessageSquareIcon,
     label: "WhatsApp aberto",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
   },
   link_created: {
     icon: LinkIcon,
     label: "Link criado",
-    color: "text-purple-600 dark:text-purple-400",
-    bgColor: "bg-purple-100 dark:bg-purple-900/30",
   },
 }
 
 /**
  * Feed de atividades recentes
  * Mostra últimas 10 ações (cliques, leads, etc.)
+ * 
+ * Segue 70/10/10: 70% neutral (gray icons), 10% primary (link slugs), 10% accent (live indicator)
  */
 export function ActivityFeed({
   activities,
@@ -160,9 +152,9 @@ export function ActivityFeed({
                 className="flex items-start gap-3 rounded-lg px-2 py-2.5 transition-all duration-200 hover:bg-muted/50 animate-in fade-in slide-in-from-top-2"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                {/* Icon */}
-                <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", config.bgColor)}>
-                  <Icon className={cn("h-4 w-4", config.color)} />
+                {/* Icon - neutral colors following 70/10/10 principle */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/50">
+                  <Icon className="h-4 w-4 text-muted-foreground" />
                 </div>
 
                 {/* Content */}

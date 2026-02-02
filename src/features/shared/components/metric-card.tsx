@@ -6,16 +6,9 @@ import { ArrowUpIcon, ArrowDownIcon, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const metricCardVariants = cva(
-  "relative flex flex-col rounded-xl border transition-all duration-200",
+  "relative flex flex-col rounded-xl border bg-card transition-all duration-200 hover:shadow-sm",
   {
     variants: {
-      variant: {
-        default: "border-border bg-card",
-        blue: "border-blue-200 bg-blue-50/50 dark:border-blue-800/50 dark:bg-blue-950/20",
-        green: "border-green-200 bg-green-50/50 dark:border-green-800/50 dark:bg-green-950/20",
-        purple: "border-purple-200 bg-purple-50/50 dark:border-purple-800/50 dark:bg-purple-950/20",
-        orange: "border-orange-200 bg-orange-50/50 dark:border-orange-800/50 dark:bg-orange-950/20",
-      },
       size: {
         default: "p-4",
         compact: "p-4",
@@ -23,23 +16,15 @@ const metricCardVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
       size: "default",
     },
   }
 )
 
 const metricIconVariants = cva(
-  "flex items-center justify-center rounded-lg",
+  "flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground",
   {
     variants: {
-      variant: {
-        default: "bg-primary/10 text-primary",
-        blue: "bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-        green: "bg-green-600/10 text-green-600 dark:bg-green-500/20 dark:text-green-400",
-        purple: "bg-purple-600/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
-        orange: "bg-orange-600/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
-      },
       size: {
         default: "h-12 w-12",
         compact: "h-10 w-10",
@@ -47,7 +32,6 @@ const metricIconVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
       size: "default",
     },
   }
@@ -64,8 +48,8 @@ export interface MetricCardProps
   label: string
   /** Valor principal a ser exibido */
   value: string | number
-  /** Componente de ícone Lucide */
-  icon: LucideIcon
+  /** Componente de ícone Lucide (opcional - usar apenas para métricas críticas) */
+  icon?: LucideIcon
   /** Indicador de tendência opcional */
   trend?: TrendIndicator
   /** Classes CSS adicionais */
@@ -73,34 +57,37 @@ export interface MetricCardProps
 }
 
 /**
- * Componente de card de métrica com variantes CVA
+ * Componente de card de métrica simplificado com 70/10/10 color priorities
  * Usado para exibir métricas chave no dashboard
+ * 
+ * 70% neutral (white/gray), 10% primary (subtle highlights), 10% accent (status)
  */
 export function MetricCard({
   label,
   value,
   icon: Icon,
   trend,
-  variant,
   size,
   className,
 }: MetricCardProps) {
   return (
-    <div className={cn(metricCardVariants({ variant, size }), className)}>
+    <div className={cn(metricCardVariants({ size }), className)}>
       <div className="flex items-center justify-between">
         {/* Lado esquerdo: Rótulo e Valor */}
-        <div className="space-y-1">
+        <div className="flex-1 space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <p className="text-2xl font-bold tracking-tight sm:text-3xl">{value}</p>
         </div>
 
-        {/* Lado direito: Ícone */}
-        <div className={cn(metricIconVariants({ variant, size }))}>
-          <Icon className={cn(size === "compact" ? "h-5 w-5" : "h-6 w-6")} />
-        </div>
+        {/* Lado direito: Ícone (opcional, apenas para métricas críticas) */}
+        {Icon && (
+          <div className={cn(metricIconVariants({ size }))}>
+            <Icon className={cn(size === "compact" ? "h-5 w-5" : "h-6 w-6")} />
+          </div>
+        )}
       </div>
 
-      {/* Indicador de Tendência */}
+      {/* Indicador de Tendência (10% accent - functional color) */}
       {trend && (
         <div className="mt-4 flex items-center gap-1">
           {trend.isPositive ? (

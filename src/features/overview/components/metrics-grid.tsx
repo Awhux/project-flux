@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { MousePointer2Icon, UsersIcon, PercentIcon, LinkIcon } from "lucide-react"
+import { MousePointer2Icon, UsersIcon } from "lucide-react"
 import { MetricCard } from "@/features/shared"
 import { formatNumber, formatPercentage } from "@/features/shared/utils"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,9 @@ export interface MetricsGridProps {
 /**
  * Grid de cards de métricas
  * Exibe as principais métricas do dashboard
+ * 
+ * Segue princípios 70/10/10: 70% neutral, 10% primary, 10% accent
+ * Ícones apenas em métricas críticas (Clicks e Leads)
  */
 export function MetricsGrid({
   metrics,
@@ -43,6 +46,7 @@ export function MetricsGrid({
 
   return (
     <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>
+      {/* Keep icons only for critical metrics: Clicks and Leads */}
       <MetricCard
         label="Total de Cliques"
         value={formatNumber(metrics.totalClicks)}
@@ -55,16 +59,15 @@ export function MetricsGrid({
         icon={UsersIcon}
         trend={trends?.leads}
       />
+      {/* Remove icons from non-critical metrics */}
       <MetricCard
         label="Taxa de Conversão"
         value={formatPercentage(metrics.conversionRate)}
-        icon={PercentIcon}
         trend={trends?.conversion}
       />
       <MetricCard
         label="Links Ativos"
         value={metrics.activeLinks}
-        icon={LinkIcon}
         trend={trends?.activeLinks}
       />
     </div>

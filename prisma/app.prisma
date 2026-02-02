@@ -90,7 +90,7 @@ model Link {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Link identification
-  slug String @unique @db.VarChar(50)
+  slug String @db.VarChar(50)
 
   // WhatsApp destination
   destinationNumber String @map("destination_number") @db.VarChar(20)
@@ -165,6 +165,9 @@ model Link {
   @@index([isActive])
   @@index([createdAt])
   @@index([slug])
+
+  @@unique([userId, slug])
+
   @@map("links")
 }
 

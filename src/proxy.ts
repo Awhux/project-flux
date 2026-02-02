@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { apiRouteMatcher, guestRouteMatcher, handleAuthRedirect, INVALID_SESSION_PARAM, publicRouteMatcher, requestIdService, sessionCookieService } from './features/middleware'
+import { apiRouteMatcher, authenticatedRouteMatcher, guestRouteMatcher, handleAuthRedirect, INVALID_SESSION_PARAM, publicRouteMatcher, requestIdService, sessionCookieService } from './features/middleware'
 
 export default async function proxy(request: NextRequest) {
   const requestId = requestIdService.generate()

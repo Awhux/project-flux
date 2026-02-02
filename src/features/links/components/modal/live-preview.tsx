@@ -30,6 +30,7 @@ import {
   type InterstitialConfig,
   type UtmValues,
 } from "@/features/interstitial"
+import { APP_URL } from "@/utils/app/links"
 
 interface FormValues {
   slug: string
@@ -79,7 +80,7 @@ function LivePreviewComponent({
   const [showRenderedMessage, setShowRenderedMessage] = React.useState(false)
 
   const handleCopy = React.useCallback(async () => {
-    await navigator.clipboard.writeText(`https://zap.lk/${formValues.slug}`)
+    await navigator.clipboard.writeText(`${APP_URL.toString()}/${formValues.slug}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [formValues.slug])
@@ -138,7 +139,7 @@ function LivePreviewComponent({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <code className="flex-1 truncate rounded bg-background px-3 py-2 text-sm">
-                    https://zap.lk/{formValues.slug}
+                    {APP_URL.toString()}/{formValues.slug}
                   </code>
                   <Button
                     type="button"

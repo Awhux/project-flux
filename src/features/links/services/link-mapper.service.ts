@@ -10,9 +10,7 @@ import { Prisma } from "@prisma/client"
 import type { ApiLink, CreateLinkRequest } from "../types/api.types"
 import type { InterstitialFormData, Testimonial } from "../types/links.types"
 import { DEFAULT_INTERSTITIAL_CONFIG } from "@/features/interstitial"
-
-// App URL for generating short links
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+import { APP_URL } from "@/utils/app/links"
 
 /**
  * Convert a Prisma Link to API Link format
@@ -34,7 +32,7 @@ export function prismaLinkToApiLink(link: PrismaLink): ApiLink {
     utmCampaign: link.defaultUtmCampaign || undefined,
     utmContent: link.defaultUtmContent || undefined,
     interstitial: extractInterstitialConfig(link),
-    shortUrl: `${APP_URL}/l/${link.slug}`,
+    shortUrl: `${APP_URL.toString()}/l/${link.slug}`,
     createdAt: link.createdAt.toISOString(),
     updatedAt: link.updatedAt.toISOString(),
   }

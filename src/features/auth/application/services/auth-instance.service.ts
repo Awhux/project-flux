@@ -17,14 +17,13 @@ function createAuth() {
     appName: env.appName,
     googleClientId: env.googleClientId,
     googleClientSecret: env.googleClientSecret,
-    trustedOrigins: env.trustedOrigins,
     isProduction: env.isProduction,
     cookies: env.cookieDomain
       ? {
-          rootDomain: env.cookieDomain,
-          laxDomains: env.cookieLaxDomains,
-          secure: env.isProduction,
-        }
+        rootDomain: env.cookieDomain,
+        laxDomains: env.cookieLaxDomains,
+        secure: env.isProduction,
+      }
       : undefined,
   }
 

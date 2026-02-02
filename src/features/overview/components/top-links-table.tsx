@@ -6,6 +6,7 @@ import { TrendingUpIcon, TrendingDownIcon, ExternalLinkIcon, CopyIcon, CheckIcon
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatNumber } from "@/features/shared/utils"
+import { APP_URL } from "@/utils/app/links"
 
 interface TopLink {
   id: string
@@ -77,7 +78,7 @@ export function TopLinksTable({
   const [copiedId, setCopiedId] = React.useState<string | null>(null)
 
   const handleCopy = async (slug: string, id: string) => {
-    await navigator.clipboard.writeText(`https://zap.lk/${slug}`)
+    await navigator.clipboard.writeText(`${APP_URL.toString()}/${slug}`)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
   }
@@ -131,7 +132,7 @@ export function TopLinksTable({
                   </span>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="truncate text-sm font-medium">
-                      zap.lk/{link.slug}
+                      {APP_URL.host}/{link.slug}
                     </span>
                     <Button
                       variant="ghost"

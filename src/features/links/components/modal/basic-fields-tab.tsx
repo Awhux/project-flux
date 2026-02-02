@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { normalizeSlug } from "../../utils/validate-slug"
 import { formatPhoneNumber } from "../../utils/format-phone"
 import { SLUG_MAX_LENGTH, MESSAGE_MAX_LENGTH, utmVariables } from "../../config"
+import { APP_URL } from "@/utils/app/links"
 
 interface FormErrors {
   slug?: string
@@ -118,7 +119,7 @@ function BasicFieldsTabComponent({
         </div>
         <div className="flex items-center">
           <span className="inline-flex h-10 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-            zap.lk/
+            {APP_URL.host}/
           </span>
           <div className="relative flex-1">
             <Input

@@ -2,11 +2,15 @@
  * Trusted origins configuration
  */
 
+import { parseCommaSeparated } from '../infrastructure/environment'
+import { getAuthEnv } from '../infrastructure/environment'
+
 /**
  * Gets the list of trusted origins for CORS and auth flows.
- * Parses from environment or returns default origins.
+ * Reads from environment variables (AUTH_TRUSTED_ORIGINS or NEXT_PUBLIC_AUTH_TRUSTED_ORIGINS)
+ * or returns default origins if not set.
  */
-export const getTrustedOrigins = (origins?: string): string[] => {
+export const getTrustedOrigins = (): string[] => {
   const defaultOrigins = [
     'http://localhost:8000',
     'https://api.provadoo.com',
@@ -14,8 +18,14 @@ export const getTrustedOrigins = (origins?: string): string[] => {
     'http://localhost:3000',
   ]
 
-  if (origins) {
-    return origins.split(',')
+  const env = getAuthEnv()
+  const trustedOriginsEnv = env.trustedOrigins
+
+  if (trustedOriginsEnv) {
+    const parsed = parseCommaSeparated(trustedOriginsEnv)
+    if (parsed.length > 0) {
+      return parsed
+    }
   }
 
   return defaultOrigins

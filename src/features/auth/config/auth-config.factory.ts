@@ -54,7 +54,6 @@ export function createAuthConfig(
   const appName = config.appName || env.appName
   const googleClientId = config.googleClientId || env.googleClientId
   const googleClientSecret = config.googleClientSecret || env.googleClientSecret
-  const trustedOrigins = config.trustedOrigins || env.trustedOrigins
 
   // Build advanced cookie configuration
   // When cookies config is provided, use it; otherwise use default config with domain from env
@@ -89,7 +88,7 @@ export function createAuthConfig(
       maxPasswordLength: config.emailAndPassword?.maxPasswordLength ?? 64,
     },
     ...(enableSocialProviders && socialProviders && { socialProviders }),
-    trustedOrigins: getTrustedOrigins(trustedOrigins),
+    trustedOrigins: getTrustedOrigins(),
     logger: {
       level: isProduction ? 'warn' : 'info',
     },

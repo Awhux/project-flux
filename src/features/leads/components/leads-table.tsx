@@ -17,6 +17,7 @@ import { EmptyState } from "@/features/shared"
 import { cn } from "@/lib/utils"
 import { getInitials, getAvatarColor } from "../utils"
 import type { DisplayLead } from "../types"
+import { APP_URL } from "@/utils/app/links"
 
 export interface LeadsTableProps {
   leads: DisplayLead[]
@@ -145,7 +146,7 @@ export function LeadsTable({
                         href="/links"
                         className="text-sm font-medium text-primary hover:underline"
                       >
-                        zap.lk/{lead.linkSlug}
+                        {APP_URL.host}/{lead.linkSlug}
                       </a>
                     </TableCell>
 

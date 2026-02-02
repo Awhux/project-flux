@@ -20,12 +20,11 @@ import {
   buildUtmQueryString,
 } from "@/features/links/services"
 import { recordClick, getClientIp } from "@/features/analytics/services"
+import { APP_URL } from "@/utils/app/links"
 
 interface RouteParams {
   params: Promise<{ slug: string }>
 }
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
 /**
  * GET /l/:slug

@@ -29,27 +29,6 @@ export function NavigationActions({
 
   return (
     <div className={cn("flex items-center gap-2 md:gap-3", className)}>
-      {/* Plan Badge - Hidden on small screens */}
-      {showPlanBadge && (
-        <Badge
-          variant={plan.isPaid ? "default" : "secondary"}
-          className="hidden md:inline-flex"
-        >
-          {plan.name}
-        </Badge>
-      )}
-
-      {/* Notifications */}
-      {showNotifications && (
-        <Button variant="ghost" size="icon" className="relative">
-          <BellIcon className="size-4" />
-          {/* Notification indicator dot */}
-          <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-      )}
-
-      {/* User Menu */}
       <UserMenu />
     </div>
   )

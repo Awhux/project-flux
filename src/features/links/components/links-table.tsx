@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils"
 import { formatNumber } from "@/features/shared/utils"
 import { toast } from "sonner"
 import type { DisplayLink } from "../types"
+import { APP_URL } from "@/utils/app/links"
 
 export interface LinksTableProps {
   links: DisplayLink[]
@@ -156,9 +157,9 @@ export function LinksTable({
   const [copiedId, setCopiedId] = React.useState<string | null>(null)
 
   const handleCopy = async (slug: string, id: string) => {
-    await navigator.clipboard.writeText(`https://zap.lk/${slug}`)
+    await navigator.clipboard.writeText(`${APP_URL.toString()}l/${slug}`)
     setCopiedId(id)
-    toast.success(`Link copiado: zap.lk/${slug}`)
+    toast.success(`Link copiado: ${APP_URL.host}/${slug}`)
     setTimeout(() => setCopiedId(null), 2000)
   }
 
@@ -261,7 +262,7 @@ export function LinksTable({
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">
-                              zap.lk/{link.slug}
+                              {APP_URL.host}/{link.slug}
                             </span>
                             <Button
                               variant="ghost"

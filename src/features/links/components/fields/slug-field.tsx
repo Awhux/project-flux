@@ -7,6 +7,7 @@ import { CheckCircleIcon, AlertCircleIcon, Loader2Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SLUG_MAX_LENGTH } from "../../config/links.config"
 import { normalizeSlug } from "../../utils/validate-slug"
+import { APP_URL } from "@/utils/app/links"
 
 export interface SlugFieldProps {
   /** Current slug value */
@@ -33,7 +34,7 @@ export interface SlugFieldProps {
  * Reusable slug input field component
  * 
  * Features:
- * - Prefix with domain (zap.lk/)
+ * - Prefix with domain (uses APP_URL.host)
  * - Character counter
  * - Loading/valid/invalid states
  * - Automatic slug normalization
@@ -77,7 +78,7 @@ export const SlugField = React.memo(function SlugField({
       </div>
       <div className="flex items-center">
         <span className="inline-flex h-10 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-          zap.lk/
+          {APP_URL.host}/
         </span>
         <div className="relative flex-1">
           <Input

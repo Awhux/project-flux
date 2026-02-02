@@ -37,6 +37,7 @@ import { InterstitialConfigTab } from "./modal/interstitial-config-tab"
 import { LivePreview } from "./modal/live-preview"
 import { useLinkForm } from "../hooks/use-link-form"
 import type { LinkFormData } from "../types"
+import { APP_URL } from "@/utils/app/links"
 
 export interface CreateLinkModalV2Props {
   open: boolean
@@ -60,7 +61,7 @@ const MobilePreviewCard = React.memo(function MobilePreviewCard({
   const [copied, setCopied] = React.useState(false)
 
   const handleCopy = React.useCallback(async () => {
-    await navigator.clipboard.writeText(`https://zap.lk/${slug}`)
+    await navigator.clipboard.writeText(`${APP_URL.toString()}/${slug}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [slug])
@@ -78,7 +79,7 @@ const MobilePreviewCard = React.memo(function MobilePreviewCard({
   return (
     <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <code className="text-sm truncate">zap.lk/{slug}</code>
+        <code className="text-sm truncate">{APP_URL.host}/{slug}</code>
         <Button type="button" variant="ghost" size="sm" onClick={handleCopy}>
           {copied ? (
             <CheckIcon className="h-4 w-4 text-green-500" />

@@ -35,6 +35,7 @@ import { validateSlug, normalizeSlug } from "../utils/validate-slug"
 import { formatPhoneNumber, getPhoneError } from "../utils/format-phone"
 import { SLUG_MAX_LENGTH, MESSAGE_MAX_LENGTH, utmVariables } from "../config"
 import type { LinkFormData } from "../types"
+import { APP_URL } from "@/utils/app/links"
 
 export interface CreateLinkModalProps {
   open: boolean
@@ -158,7 +159,7 @@ export function CreateLinkModal({
 
   // Copy preview link to clipboard
   const handleCopyPreview = async () => {
-    await navigator.clipboard.writeText(`https://zap.lk/${slug}`)
+    await navigator.clipboard.writeText(`${APP_URL.toString()}/${slug}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -243,7 +244,7 @@ export function CreateLinkModal({
               </div>
               <div className="flex items-center">
                 <span className="inline-flex h-10 items-center rounded-l-lg border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-                  zap.lk/
+                  {APP_URL.host}/
                 </span>
                 <div className="relative flex-1">
                   <Input
@@ -460,7 +461,7 @@ export function CreateLinkModal({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <code className="flex-1 rounded bg-background px-3 py-2 text-sm">
-                    https://zap.lk/{slug}
+                    {APP_URL.toString()}/{slug}
                   </code>
                   <Button
                     type="button"

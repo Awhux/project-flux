@@ -16,6 +16,7 @@ import {
   detectDeviceType,
 } from "@/features/links/services"
 import { recordClick, getClientIp } from "@/features/analytics/services"
+import { sendFacebookEventAsync } from "@/features/facebook"
 import {
   findLeadsByUserId,
   getLeadStats,
@@ -262,6 +263,29 @@ export async function POST(request: NextRequest) {
         data: { leadCount: { increment: 1 } },
       }),
     ])
+
+    // Send Facebook CAPI Lead event (fire-and-forget - doesn't block response)
+    if (link.pixelId && link.capiToken) {
+      sendFacebookEventAsync(
+        {
+          pixelId: link.pixelId,
+          accessToken: link.capiToken,
+          eventName: "Lead",
+          eventSourceUrl: request.url,
+          userData: {
+            clientIpAddress: ipAddress,
+            clientUserAgent: userAgent,
+            fbp: fbp,
+            fbc: fbc,
+            phone: cleanPhone,
+            email: email || undefined,
+            firstName: name || undefined,
+          },
+          eventId: leadId,
+        },
+        "Lead Capture CAPI"
+      )
+    }
 
     // Build WhatsApp URL with UTM params
     const whatsappUrl = buildWhatsAppUrl(

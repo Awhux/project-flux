@@ -20,6 +20,7 @@ import {
   buildUtmQueryString,
 } from "@/features/links/services"
 import { recordClick, getClientIp } from "@/features/analytics/services"
+import { sendFacebookEventAsync } from "@/features/facebook"
 import { APP_URL } from "@/utils/app/links"
 
 interface RouteParams {
@@ -93,6 +94,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     } catch (clickError) {
       // Log error but don't block redirect - user experience is priority
       console.error("Failed to record click:", clickError)
+    }
+
+    // Send Facebook CAPI event (fire-and-forget - doesn't block redirect)
+    if (link.pixelId && link.capiToken) {
+      sendFacebookEventAsync(
+        {
+          pixelId: link.pixelId,
+          accessToken: link.capiToken,
+          eventName: "PageView",
+          eventSourceUrl: request.url,
+          userData: {
+            clientIpAddress: ipAddress,
+            clientUserAgent: userAgent,
+            fbp: fbp,
+            fbc: fbc,
+          },
+          eventId: link.id,
+        },
+        "Link Click CAPI"
+      )
     }
 
     // Determine redirect destination
